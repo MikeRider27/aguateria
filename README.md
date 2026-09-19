@@ -83,3 +83,15 @@ El frontend en modo dev usa el proxy de Vite (`/api` → `http://localhost:5000`
 ## Gestion de usuarios
 
 Solo un usuario `admin` puede crear nuevos usuarios (`POST /api/auth/register`, protegido). Para dar de alta un repartidor, inicia sesion como admin y usa esa ruta con el token en el header `Authorization: Bearer <token>`.
+
+## Autor
+
+-   **Miguel Villalba**
+-   📧 mike.mavc27@gmail.com
+
+------------------------------------------------------------------------
+
+## Licencia
+
+Este proyecto está bajo la licencia **MIT**. Ver el archivo
+[LICENSE](LICENSE) para más detalles.
