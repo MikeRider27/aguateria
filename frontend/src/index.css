@@ -926,3 +926,28 @@ a.btn-wa {
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
+
+/* ---- Fase 3: reportes ---- */
+.reporte-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.enlace-chip {
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.page-header > div > button {
+  margin-left: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .reporte-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -5,6 +5,8 @@ const { rangoDia } = require('../utils/fechas');
 const { totalesEnClientes } = require('../services/envases');
 const { deudasPorCliente } = require('../services/cuentas');
 const Cobro = require('../models/Cobro');
+const Equipo = require('../models/Equipo');
+const Suscripcion = require('../models/Suscripcion');
 
 const getStats = async (req, res, next) => {
   try {
@@ -24,13 +26,18 @@ const getStats = async (req, res, next) => {
         totalesEnClientes(),
       ]);
 
-    const [deudas, cobrosHoyAgg] = await Promise.all([
+    const [deudas, cobrosHoyAgg, equiposComodato, suscripcionesActivas] = await Promise.all([
       deudasPorCliente(),
       Cobro.aggregate([
         { $match: { createdAt: { $gte: inicio, $lt: fin }, anulado: false } },
         { $group: { _id: null, total: { $sum: '$monto' } } },
       ]),
+      Equipo.find({ estado: 'comodato' }).select('estado ultimoMantenimiento contrato frecuenciaMantenimientoDias'),
+      Suscripcion.countDocuments({ activa: true }),
     ]);
+    const mantenimientosVencidos = equiposComodato.filter(
+      (e) => e.proximoMantenimiento && e.proximoMantenimiento <= new Date()
+    ).length;
 
     const productosStockBajo = productos.filter((p) => p.stock <= p.stockMinimo);
     const retornables = productos.filter((p) => p.retornable);
@@ -45,6 +52,9 @@ const getStats = async (req, res, next) => {
       porCobrar: deudas.reduce((a, d) => a + d.saldo, 0),
       clientesConDeuda: deudas.length,
       cobrosHoy: cobrosHoyAgg[0]?.total || 0,
+      equiposEnComodato: equiposComodato.length,
+      mantenimientosVencidos,
+      suscripcionesActivas,
       envasesEnClientes: [...enClientes.values()].reduce((a, b) => a + b, 0),
       envasesVacios: retornables.reduce((a, p) => a + p.stockVacios, 0),
       productosStockBajo: productosStockBajo.map((p) => ({

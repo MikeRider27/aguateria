@@ -46,6 +46,7 @@ const orderSchema = new mongoose.Schema(
     condicion: { type: String, enum: ['contado', 'credito'], default: 'contado' },
     montoPagado: { type: Number, min: 0, default: 0, validate: enteroGs },
     factura: { type: mongoose.Schema.Types.ObjectId, ref: 'Factura', default: null },
+    suscripcion: { type: mongoose.Schema.Types.ObjectId, ref: 'Suscripcion', default: null },
     repartidor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     zona: { type: mongoose.Schema.Types.ObjectId, ref: 'Zone', default: null },
     fechaProgramada: { type: Date, default: Date.now },

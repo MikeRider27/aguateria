@@ -19,6 +19,10 @@ const cuentaRoutes = require('./routes/cuentaRoutes');
 const cajaRoutes = require('./routes/cajaRoutes');
 const facturaRoutes = require('./routes/facturaRoutes');
 const empresaRoutes = require('./routes/empresaRoutes');
+const equipoRoutes = require('./routes/equipoRoutes');
+const suscripcionRoutes = require('./routes/suscripcionRoutes');
+const reporteRoutes = require('./routes/reporteRoutes');
+const { iniciarProgramador } = require('./services/suscripciones');
 
 const app = express();
 
@@ -42,6 +46,9 @@ app.use('/api/cuentas', cuentaRoutes);
 app.use('/api/caja', cajaRoutes);
 app.use('/api/facturas', facturaRoutes);
 app.use('/api/empresa', empresaRoutes);
+app.use('/api/equipos', equipoRoutes);
+app.use('/api/suscripciones', suscripcionRoutes);
+app.use('/api/reportes', reporteRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -52,6 +59,8 @@ const start = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => console.log(`Servidor escuchando en el puerto ${PORT}`));
+    // Genera los pedidos de suscripciones al iniciar y luego cada hora
+    iniciarProgramador();
   } catch (error) {
     console.error('Error al iniciar el servidor:', error.message);
     process.exit(1);

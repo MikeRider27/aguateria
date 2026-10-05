@@ -17,6 +17,9 @@ import Cuentas from './pages/Cuentas';
 import Caja from './pages/Caja';
 import Facturas from './pages/Facturas';
 import Empresa from './pages/Empresa';
+import Equipos from './pages/Equipos';
+import Suscripciones from './pages/Suscripciones';
+import Reportes from './pages/Reportes';
 
 const PAGINAS = [
   ['/ruta', Ruta],
@@ -31,6 +34,9 @@ const PAGINAS = [
   ['/caja', Caja],
   ['/facturas', Facturas],
   ['/empresa', Empresa],
+  ['/equipos', Equipos],
+  ['/suscripciones', Suscripciones],
+  ['/reportes', Reportes],
 ];
 
 function App() {

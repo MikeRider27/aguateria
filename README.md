@@ -37,7 +37,10 @@ Pensado para una distribuidora de agua en bidones de Paraguay (montos en guarani
 - **Cobros:** recibos numerados en efectivo, transferencia, tarjeta, QR o cheque, aplicados a pedidos puntuales o a la deuda mas antigua. El repartidor puede cobrar al confirmar la entrega. Los cobros se anulan solo si aun no fueron rendidos.
 - **Caja:** cobros pendientes de rendir agrupados por usuario; el cajero recibe la rendicion, declara el efectivo contado y queda registrado el faltante o sobrante.
 - **Facturacion electronica (SIFEN):** datos de la empresa, timbrado y numeracion `001-001-0000001`. Factura por pedidos entregados con IVA incluido (10% = total/11, 5% = total/21), representacion grafica imprimible (KuDE) con CDC, reenvio y anulacion. Las garantias de envases no se facturan. Ver [Facturacion electronica](#facturacion-electronica-sifen).
-- **Dashboard:** ventas y cobros del dia, cuentas por cobrar, pedidos para hoy, pendientes/en camino, clientes activos, envases en clientes y alertas de stock bajo.
+- **Dispensadores en comodato:** inventario de equipos (frio/calor, natural, bomba electrica) con codigo y numero de serie. Entrega al cliente con contrato, consumo minimo mensual y garantia; retiro (vuelve a planta para sanitizar), sanitizaciones periodicas con alerta de vencimiento, baja e historial completo por equipo.
+- **Suscripciones:** entregas recurrentes semanales, quincenales o mensuales. Los pedidos se generan solos cada hora, un dia antes de la entrega (`SUSCRIPCIONES_DIAS_ANTICIPACION`), con el repartidor de la zona del cliente. Si falta stock la suscripcion queda marcada con el error y se reintenta. Se pueden pausar y reactivar.
+- **Reportes:** ventas por periodo (resumen, por zona, repartidor, producto y dia), clientes inactivos sin compras hace N dias con contacto por WhatsApp, y comodatos con consumo de los ultimos 30 dias contra el minimo pactado.
+- **Dashboard:** ventas y cobros del dia, cuentas por cobrar, pedidos para hoy, pendientes/en camino, clientes activos, dispensadores en comodato (y sanitizaciones vencidas), suscripciones activas, envases en clientes y alertas de stock bajo.
 
 ## Levantar todo con Docker
 
@@ -68,7 +71,7 @@ Pensado para una distribuidora de agua en bidones de Paraguay (montos en guarani
    - **Cajero:** `cajero@guateria.com` / `cajero123`
    - **Repartidor:** `repartidor@guateria.com` / `repartidor123`
 
-   El seed tambien crea zonas de Gran Asuncion, productos (bidones 20L y 10L retornables, packs), clientes de ejemplo (uno de ellos a credito) y datos de empresa con un timbrado ficticio.
+   El seed tambien crea zonas de Gran Asuncion, productos (bidones 20L y 10L retornables, packs), clientes de ejemplo (uno de ellos a credito), datos de empresa con un timbrado ficticio, dispensadores (uno en comodato) y una suscripcion semanal.
 
 La API queda expuesta tambien en `http://localhost:5000/api` y MongoDB en el puerto `27017` por si necesitas conectarte con una herramienta externa.
 

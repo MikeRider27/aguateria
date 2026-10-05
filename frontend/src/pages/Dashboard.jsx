@@ -48,6 +48,17 @@ const Dashboard = () => {
           <span className="stat-sub">{stats.clientesConDeuda} clientes</span>
         </div>
         <div className="stat-card">
+          <span className="stat-label">Dispensadores en comodato</span>
+          <span className="stat-value">{stats.equiposEnComodato}</span>
+          <span className={stats.mantenimientosVencidos > 0 ? 'stat-sub txt-rojo' : 'stat-sub'}>
+            {stats.mantenimientosVencidos} con sanitizacion vencida
+          </span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Suscripciones activas</span>
+          <span className="stat-value">{stats.suscripcionesActivas}</span>
+        </div>
+        <div className="stat-card">
           <span className="stat-label">Envases en clientes</span>
           <span className="stat-value">{stats.envasesEnClientes}</span>
           <span className="stat-sub">{stats.envasesVacios} vacios en planta</span>

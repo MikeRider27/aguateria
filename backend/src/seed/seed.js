@@ -5,6 +5,9 @@ const Product = require('../models/Product');
 const Client = require('../models/Client');
 const Zone = require('../models/Zone');
 const Empresa = require('../models/Empresa');
+const Equipo = require('../models/Equipo');
+const Suscripcion = require('../models/Suscripcion');
+const { primeraEntrega } = require('../services/suscripciones');
 
 const run = async () => {
   await connectDB();
@@ -91,6 +94,28 @@ const run = async () => {
   if (!(await User.findOne({ email: 'cajero@guateria.com' }))) {
     await User.create({ nombre: 'Laura Caceres', email: 'cajero@guateria.com', password: 'cajero123', rol: 'cajero' });
     console.log('Usuario cajero creado -> email: cajero@guateria.com / password: cajero123');
+  }
+
+  if ((await Equipo.countDocuments()) === 0) {
+    const empresa = await Client.findOne({ nombre: /Estudio Contable/ });
+    const haceCien = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000);
+    await Equipo.insertMany([
+      { codigo: 'DISP-0001', tipo: 'frio_calor', marca: 'Midea', modelo: 'YL1633S', numeroSerie: 'MD16330981', estado: 'comodato', cliente: empresa?._id, contrato: { numero: 'C-2026-001', fechaInicio: haceCien, consumoMinimoMensual: 8, montoGarantia: 0 }, historial: [{ tipo: 'alta' }, { tipo: 'entrega', cliente: empresa?._id, fecha: haceCien }] },
+      { codigo: 'DISP-0002', tipo: 'frio_calor', marca: 'Midea', modelo: 'YL1633S', numeroSerie: 'MD16330982', historial: [{ tipo: 'alta' }] },
+      { codigo: 'DISP-0003', tipo: 'natural', marca: 'Tokyo', modelo: 'Mesa', historial: [{ tipo: 'alta' }] },
+      { codigo: 'BOMBA-0001', tipo: 'bomba_electrica', marca: 'Generica', modelo: 'USB', historial: [{ tipo: 'alta' }] },
+    ]);
+    console.log('Equipos de ejemplo creados');
+  }
+
+  if ((await Suscripcion.countDocuments()) === 0) {
+    const jose = await Client.findOne({ nombre: 'Jose Ramirez' });
+    const bidon = await Product.findOne({ presentacion: 'Bidon 20L' });
+    if (jose && bidon) {
+      const datos = { cliente: jose._id, items: [{ producto: bidon._id, cantidad: 2 }], frecuencia: 'semanal', diaSemana: 'viernes' };
+      await Suscripcion.create({ ...datos, proximaEntrega: primeraEntrega(datos) });
+      console.log('Suscripcion de ejemplo creada');
+    }
   }
 
   console.log('Seed completado');
