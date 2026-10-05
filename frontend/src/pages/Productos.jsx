@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import Modal from '../components/Modal';
+import { gs, mensajeError } from '../utils/format';
 
-const vacio = { nombre: '', presentacion: '', precio: '', stock: '', stockMinimo: '' };
+const vacio = {
+  nombre: '',
+  presentacion: '',
+  precio: '',
+  stock: '',
+  stockMinimo: '',
+  retornable: false,
+  precioGarantia: '',
+  stockVacios: '',
+  activo: true,
+};
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
@@ -20,6 +31,9 @@ const Productos = () => {
     cargar();
   }, []);
 
+  const set = (campo) => (e) =>
+    setForm({ ...form, [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+
   const abrirNuevo = () => {
     setEditando(null);
     setForm(vacio);
@@ -27,15 +41,9 @@ const Productos = () => {
     setMostrarModal(true);
   };
 
-  const abrirEditar = (producto) => {
-    setEditando(producto);
-    setForm({
-      nombre: producto.nombre,
-      presentacion: producto.presentacion,
-      precio: producto.precio,
-      stock: producto.stock,
-      stockMinimo: producto.stockMinimo,
-    });
+  const abrirEditar = (p) => {
+    setEditando(p);
+    setForm(Object.fromEntries(Object.keys(vacio).map((k) => [k, p[k] ?? vacio[k]])));
     setError('');
     setMostrarModal(true);
   };
@@ -48,6 +56,8 @@ const Productos = () => {
       precio: Number(form.precio),
       stock: Number(form.stock),
       stockMinimo: Number(form.stockMinimo),
+      precioGarantia: form.retornable ? Number(form.precioGarantia || 0) : 0,
+      stockVacios: form.retornable ? Number(form.stockVacios || 0) : 0,
     };
     try {
       if (editando) {
@@ -58,14 +68,18 @@ const Productos = () => {
       setMostrarModal(false);
       cargar();
     } catch (err) {
-      setError(err.response?.data?.mensaje || 'Error al guardar producto');
+      setError(mensajeError(err, 'Error al guardar producto'));
     }
   };
 
   const eliminar = async (id) => {
     if (!window.confirm('¿Eliminar este producto?')) return;
-    await api.delete(`/products/${id}`);
-    cargar();
+    try {
+      await api.delete(`/products/${id}`);
+      cargar();
+    } catch (err) {
+      window.alert(mensajeError(err, 'No se pudo eliminar'));
+    }
   };
 
   return (
@@ -75,80 +89,96 @@ const Productos = () => {
         <button onClick={abrirNuevo}>+ Nuevo producto</button>
       </div>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Presentacion</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Stock minimo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((p) => (
-            <tr key={p._id} className={p.stock <= p.stockMinimo ? 'row-warning' : ''}>
-              <td>{p.nombre}</td>
-              <td>{p.presentacion}</td>
-              <td>${p.precio.toFixed(2)}</td>
-              <td>{p.stock}</td>
-              <td>{p.stockMinimo}</td>
-              <td>
-                <button className="btn-secondary" onClick={() => abrirEditar(p)}>
-                  Editar
-                </button>
-                <button className="btn-danger" onClick={() => eliminar(p._id)}>
-                  Eliminar
-                </button>
-              </td>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Minimo</th>
+              <th>Envase</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {productos.map((p) => (
+              <tr
+                key={p._id}
+                className={!p.activo ? 'row-inactivo' : p.stock <= p.stockMinimo ? 'row-warning' : ''}
+              >
+                <td>
+                  {p.nombre} <span className="muted">{p.presentacion}</span>
+                  {!p.activo && <span className="tag">Inactivo</span>}
+                </td>
+                <td>{gs(p.precio)}</td>
+                <td>{p.stock}</td>
+                <td>{p.stockMinimo}</td>
+                <td>
+                  {p.retornable ? (
+                    <>
+                      Retornable
+                      <small className="muted block">Garantia {gs(p.precioGarantia)}</small>
+                    </>
+                  ) : (
+                    'Descartable'
+                  )}
+                </td>
+                <td className="acciones">
+                  <button className="btn-secondary" onClick={() => abrirEditar(p)}>
+                    Editar
+                  </button>
+                  <button className="btn-danger" onClick={() => eliminar(p._id)}>
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {mostrarModal && (
         <Modal titulo={editando ? 'Editar producto' : 'Nuevo producto'} onClose={() => setMostrarModal(false)}>
           <form onSubmit={handleSubmit} className="form">
             {error && <div className="alert-error">{error}</div>}
             <label>Nombre</label>
-            <input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              required
-            />
+            <input value={form.nombre} onChange={set('nombre')} placeholder="Agua mineral" required />
             <label>Presentacion</label>
-            <input
-              value={form.presentacion}
-              onChange={(e) => setForm({ ...form, presentacion: e.target.value })}
-              placeholder="Ej: Garrafon 20L"
-              required
-            />
-            <label>Precio</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.precio}
-              onChange={(e) => setForm({ ...form, precio: e.target.value })}
-              required
-            />
-            <label>Stock</label>
-            <input
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              required
-            />
-            <label>Stock minimo</label>
-            <input
-              type="number"
-              min="0"
-              value={form.stockMinimo}
-              onChange={(e) => setForm({ ...form, stockMinimo: e.target.value })}
-              required
-            />
+            <input value={form.presentacion} onChange={set('presentacion')} placeholder="Bidon 20L" required />
+            <label>Precio (Gs.)</label>
+            <input type="number" step="1" min="0" value={form.precio} onChange={set('precio')} required />
+            <div className="form-grid">
+              <div>
+                <label>{form.retornable ? 'Stock (envases llenos)' : 'Stock'}</label>
+                <input type="number" min="0" value={form.stock} onChange={set('stock')} required />
+              </div>
+              <div>
+                <label>Stock minimo</label>
+                <input type="number" min="0" value={form.stockMinimo} onChange={set('stockMinimo')} required />
+              </div>
+            </div>
+            <label className="check">
+              <input type="checkbox" checked={form.retornable} onChange={set('retornable')} /> Envase retornable
+              (el cliente devuelve el vacio)
+            </label>
+            {form.retornable && (
+              <div className="form-grid">
+                <div>
+                  <label>Garantia por envase (Gs.)</label>
+                  <input type="number" step="1" min="0" value={form.precioGarantia} onChange={set('precioGarantia')} />
+                </div>
+                <div>
+                  <label>Envases vacios en planta</label>
+                  <input type="number" min="0" value={form.stockVacios} onChange={set('stockVacios')} />
+                </div>
+              </div>
+            )}
+            {editando && (
+              <label className="check">
+                <input type="checkbox" checked={form.activo} onChange={set('activo')} /> Producto activo
+              </label>
+            )}
             <button type="submit">Guardar</button>
           </form>
         </Modal>

@@ -1,21 +1,16 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import { gs } from '../utils/format';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
 
-  const cargar = async () => {
-    try {
-      const { data } = await api.get('/dashboard/stats');
-      setStats(data);
-    } catch (err) {
-      setError(err.response?.data?.mensaje || 'Error al cargar estadisticas');
-    }
-  };
-
   useEffect(() => {
-    cargar();
+    api
+      .get('/dashboard/stats')
+      .then(({ data }) => setStats(data))
+      .catch((err) => setError(err.response?.data?.mensaje || 'Error al cargar estadisticas'));
   }, []);
 
   if (error) return <div className="alert-error">{error}</div>;
@@ -27,20 +22,26 @@ const Dashboard = () => {
       <div className="stats-grid">
         <div className="stat-card">
           <span className="stat-label">Ventas de hoy</span>
-          <span className="stat-value">${stats.ventasHoy.toFixed(2)}</span>
-          <span className="stat-sub">{stats.pedidosHoy} pedidos</span>
+          <span className="stat-value small">{gs(stats.ventasHoy)}</span>
+          <span className="stat-sub">{stats.entregasHoy} entregas (sin garantias)</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Pedidos pendientes</span>
+          <span className="stat-label">Pedidos para hoy</span>
+          <span className="stat-value">{stats.pedidosParaHoy}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Pendientes</span>
           <span className="stat-value">{stats.pedidosPendientes}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Pedidos en camino</span>
-          <span className="stat-value">{stats.pedidosEnCamino}</span>
+          <span className="stat-sub">{stats.pedidosEnCamino} en camino</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Clientes activos</span>
           <span className="stat-value">{stats.totalClientes}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Envases en clientes</span>
+          <span className="stat-value">{stats.envasesEnClientes}</span>
+          <span className="stat-sub">{stats.envasesVacios} vacios en planta</span>
         </div>
       </div>
 

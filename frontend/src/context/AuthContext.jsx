@@ -3,6 +3,11 @@ import api from '../api/axios';
 
 const AuthContext = createContext(null);
 
+export const ROLES = {
+  admin: 'Administrador',
+  repartidor: 'Repartidor',
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('user');
@@ -46,7 +51,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, cargando, esAdmin: user?.rol === 'admin' }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        cargando,
+        esAdmin: user?.rol === 'admin',
+        tieneRol: (...roles) => roles.includes(user?.rol),
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

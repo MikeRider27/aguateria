@@ -5,6 +5,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  moverEnvases,
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -18,5 +19,6 @@ router
   .get(getProduct)
   .put(authorize('admin'), updateProduct)
   .delete(authorize('admin'), deleteProduct);
+router.post('/:id/envases', authorize('admin'), moverEnvases);
 
 module.exports = router;

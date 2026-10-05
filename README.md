@@ -20,11 +20,16 @@ guateria/
 
 ## Modulos
 
-- **Auth:** login con JWT. Roles `admin` (acceso total) y `repartidor` (sin acceso a Productos ni eliminar registros).
-- **Productos:** catalogo con precio, stock y stock minimo (alerta de stock bajo en el dashboard).
-- **Clientes:** datos de contacto y direccion de entrega.
-- **Pedidos:** carrito de productos por pedido, descuento automatico de inventario al crear, cambio de estado (`pendiente` → `en_camino` → `entregado` / `cancelado`) con restitucion de stock al cancelar o eliminar.
-- **Dashboard:** ventas del dia, pedidos pendientes/en camino, clientes activos y alertas de stock bajo.
+Pensado para una distribuidora de agua en bidones de Paraguay (montos en guaranies, RUC con digito verificador, zonas de Gran Asuncion).
+
+- **Auth y usuarios:** login con JWT. Roles `admin` (acceso total) y `repartidor` (hoja de ruta, pedidos, clientes y envases; sin acceso a Productos, Zonas ni Usuarios). Pantalla de Usuarios para dar de alta repartidores.
+- **Productos:** catalogo con precio en Gs., stock y stock minimo. Los productos **retornables** (bidones 20L/10L) tienen precio de garantia por envase y stock de vacios y dañados.
+- **Envases retornables:** libro de movimientos por cliente (entrega / retiro / ajuste) con el saldo de bidones que tiene cada cliente. Inventario por producto: llenos, vacios en planta, en clientes y dañados. Operaciones de planta: llenado, baja por daño, ingreso de envases nuevos y descarte. Filtro de clientes con envases sin movimiento hace +30/60/90 dias.
+- **Clientes:** particular o empresa, CI o RUC (el DV se calcula con el algoritmo modulo 11 de la DNIT), telefono y WhatsApp, direccion, barrio, ciudad, zona de reparto y coordenadas GPS.
+- **Zonas de reparto:** ciudad, dias de visita y repartidor asignado. Al crear un pedido se asigna automaticamente el repartidor de la zona del cliente.
+- **Pedidos:** fecha de entrega programada, garantias por envases nuevos, descuento automatico de inventario. Estados `pendiente` → `en_camino` → `entregado` / `cancelado`. La entrega se confirma registrando los vacios retirados, lo que actualiza el saldo del cliente y el stock de vacios. Un pedido entregado no puede cancelarse ni eliminarse.
+- **Hoja de ruta:** vista para el celular del repartidor con los pedidos del dia (y los atrasados), bidones a cargar, monto a cobrar, botones de llamada, WhatsApp y mapa, y clientes de las zonas que se visitan ese dia que todavia no hicieron pedido.
+- **Dashboard:** ventas del dia, pedidos para hoy, pendientes/en camino, clientes activos, envases en clientes y alertas de stock bajo.
 
 ## Levantar todo con Docker
 
@@ -51,10 +56,10 @@ guateria/
 
 4. Abre la aplicacion en [http://localhost:8080](http://localhost:8080) e inicia sesion con:
 
-   - **Email:** `admin@guateria.com`
-   - **Password:** `admin123`
+   - **Admin:** `admin@guateria.com` / `admin123` (o los valores de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`)
+   - **Repartidor:** `repartidor@guateria.com` / `repartidor123`
 
-   (o los valores que hayas definido en `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`).
+   El seed tambien crea zonas de Gran Asuncion, productos (bidones 20L y 10L retornables, packs) y clientes de ejemplo.
 
 La API queda expuesta tambien en `http://localhost:5000/api` y MongoDB en el puerto `27017` por si necesitas conectarte con una herramienta externa.
 
@@ -82,7 +87,11 @@ El frontend en modo dev usa el proxy de Vite (`/api` → `http://localhost:5000`
 
 ## Gestion de usuarios
 
-Solo un usuario `admin` puede crear nuevos usuarios (`POST /api/auth/register`, protegido). Para dar de alta un repartidor, inicia sesion como admin y usa esa ruta con el token en el header `Authorization: Bearer <token>`.
+Solo un usuario `admin` puede crear o editar usuarios, desde la pantalla **Usuarios** (`/api/users`). Los usuarios no se eliminan: se desactivan.
+
+## Zona horaria
+
+El backend corre con `TZ=America/Asuncion` (definido en `docker-compose.yml`) para que "hoy", la hoja de ruta y los dias de visita coincidan con la hora de Paraguay.
 
 ## Autor
 

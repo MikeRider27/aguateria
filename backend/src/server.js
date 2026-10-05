@@ -10,6 +10,10 @@ const productRoutes = require('./routes/productRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const zoneRoutes = require('./routes/zoneRoutes');
+const userRoutes = require('./routes/userRoutes');
+const envaseRoutes = require('./routes/envaseRoutes');
+const rutaRoutes = require('./routes/rutaRoutes');
 
 const app = express();
 
@@ -24,6 +28,10 @@ app.use('/api/products', productRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/zones', zoneRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/envases', envaseRoutes);
+app.use('/api/ruta', rutaRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

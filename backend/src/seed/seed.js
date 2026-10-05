@@ -3,6 +3,7 @@ const connectDB = require('../config/db');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Client = require('../models/Client');
+const Zone = require('../models/Zone');
 
 const run = async () => {
   await connectDB();
@@ -23,23 +24,51 @@ const run = async () => {
     console.log('El usuario admin ya existe, se omite creacion');
   }
 
-  const productosCount = await Product.countDocuments();
-  if (productosCount === 0) {
+  let repartidor = await User.findOne({ email: 'repartidor@guateria.com' });
+  if (!repartidor) {
+    repartidor = await User.create({
+      nombre: 'Carlos Benitez',
+      email: 'repartidor@guateria.com',
+      password: 'repartidor123',
+      rol: 'repartidor',
+      telefono: '0981 456 789',
+    });
+    console.log('Usuario repartidor creado -> email: repartidor@guateria.com / password: repartidor123');
+  }
+
+  if ((await Zone.countDocuments()) === 0) {
+    await Zone.insertMany([
+      { nombre: 'Asuncion Centro', ciudad: 'Asuncion', diasVisita: ['lunes', 'jueves'], repartidor: repartidor._id },
+      { nombre: 'Villa Morra / Recoleta', ciudad: 'Asuncion', diasVisita: ['martes', 'viernes'], repartidor: repartidor._id },
+      { nombre: 'Luque', ciudad: 'Luque', diasVisita: ['martes', 'viernes'] },
+      { nombre: 'San Lorenzo', ciudad: 'San Lorenzo', diasVisita: ['miercoles', 'sabado'] },
+      { nombre: 'Fernando de la Mora', ciudad: 'Fernando de la Mora', diasVisita: ['lunes', 'jueves'] },
+      { nombre: 'Lambare', ciudad: 'Lambare', diasVisita: ['miercoles', 'sabado'] },
+    ]);
+    console.log('Zonas de reparto creadas');
+  }
+
+  if ((await Product.countDocuments()) === 0) {
     await Product.insertMany([
-      { nombre: 'Garrafon', presentacion: '20L', precio: 35, stock: 50, stockMinimo: 10 },
-      { nombre: 'Garrafon retornable', presentacion: '20L', precio: 25, stock: 30, stockMinimo: 10 },
-      { nombre: 'Botellon', presentacion: '10L', precio: 20, stock: 25, stockMinimo: 5 },
-      { nombre: 'Paquete botellas', presentacion: '12 x 600ml', precio: 45, stock: 40, stockMinimo: 10 },
+      { nombre: 'Agua mineral', presentacion: 'Bidon 20L', precio: 15000, stock: 120, stockMinimo: 30, retornable: true, precioGarantia: 30000, stockVacios: 40 },
+      { nombre: 'Agua mineral', presentacion: 'Bidon 10L', precio: 10000, stock: 60, stockMinimo: 15, retornable: true, precioGarantia: 20000, stockVacios: 15 },
+      { nombre: 'Agua mineral sin gas', presentacion: 'Pack 12 x 500ml', precio: 30000, stock: 50, stockMinimo: 10 },
+      { nombre: 'Agua mineral con gas', presentacion: 'Pack 6 x 1,5L', precio: 32000, stock: 30, stockMinimo: 8 },
+      { nombre: 'Bomba manual', presentacion: 'Para bidon 20L', precio: 35000, stock: 15, stockMinimo: 5 },
     ]);
     console.log('Productos de ejemplo creados');
   }
 
-  const clientesCount = await Client.countDocuments();
-  if (clientesCount === 0) {
-    await Client.insertMany([
-      { nombre: 'Juan Perez', telefono: '5511223344', direccion: 'Calle Falsa 123' },
-      { nombre: 'Maria Lopez', telefono: '5599887766', direccion: 'Av. Reforma 456' },
-    ]);
+  if ((await Client.countDocuments()) === 0) {
+    const zonas = new Map((await Zone.find()).map((z) => [z.nombre, z._id]));
+    const clientes = [
+      { nombre: 'Maria Gonzalez', tipoDocumento: 'ci', documento: '3456789', telefono: '0981 123 456', whatsapp: '595981123456', direccion: 'Tte. Fariña 1234 c/ Brasil', barrio: 'Sajonia', ciudad: 'Asuncion', zona: zonas.get('Asuncion Centro'), referencia: 'Porton negro' },
+      { nombre: 'Jose Ramirez', tipoDocumento: 'ci', documento: '4567890', telefono: '0972 654 321', whatsapp: '595972654321', direccion: 'Av. Mcal. Lopez 3500', barrio: 'Villa Morra', ciudad: 'Asuncion', zona: zonas.get('Villa Morra / Recoleta') },
+      { tipo: 'empresa', nombre: 'Estudio Contable Benitez S.A.', tipoDocumento: 'ruc', documento: '80012345', telefono: '021 600 700', whatsapp: '595991600700', email: 'admin@estudiobenitez.com.py', direccion: 'Gral. Diaz 555, piso 3', barrio: 'Centro', ciudad: 'Asuncion', zona: zonas.get('Asuncion Centro') },
+      { nombre: 'Ana Villalba', tipoDocumento: 'ruc', documento: '2345678', telefono: '0983 222 333', whatsapp: '595983222333', direccion: 'Ruta Luque - San Bernardino km 2', barrio: 'Laurelty', ciudad: 'Luque', zona: zonas.get('Luque') },
+      { nombre: 'Pedro Acosta', telefono: '0961 777 888', direccion: 'Mcal. Estigarribia 1500', barrio: 'Barcequillo', ciudad: 'San Lorenzo', zona: zonas.get('San Lorenzo') },
+    ];
+    for (const c of clientes) await Client.create(c);
     console.log('Clientes de ejemplo creados');
   }
 
