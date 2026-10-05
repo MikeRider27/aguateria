@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Client = require('../models/Client');
 const Zone = require('../models/Zone');
+const Empresa = require('../models/Empresa');
 
 const run = async () => {
   await connectDB();
@@ -64,12 +65,32 @@ const run = async () => {
     const clientes = [
       { nombre: 'Maria Gonzalez', tipoDocumento: 'ci', documento: '3456789', telefono: '0981 123 456', whatsapp: '595981123456', direccion: 'Tte. Fariña 1234 c/ Brasil', barrio: 'Sajonia', ciudad: 'Asuncion', zona: zonas.get('Asuncion Centro'), referencia: 'Porton negro' },
       { nombre: 'Jose Ramirez', tipoDocumento: 'ci', documento: '4567890', telefono: '0972 654 321', whatsapp: '595972654321', direccion: 'Av. Mcal. Lopez 3500', barrio: 'Villa Morra', ciudad: 'Asuncion', zona: zonas.get('Villa Morra / Recoleta') },
-      { tipo: 'empresa', nombre: 'Estudio Contable Benitez S.A.', tipoDocumento: 'ruc', documento: '80012345', telefono: '021 600 700', whatsapp: '595991600700', email: 'admin@estudiobenitez.com.py', direccion: 'Gral. Diaz 555, piso 3', barrio: 'Centro', ciudad: 'Asuncion', zona: zonas.get('Asuncion Centro') },
+      { tipo: 'empresa', nombre: 'Estudio Contable Benitez S.A.', condicionVenta: 'credito', limiteCredito: 1500000, plazoDias: 30, tipoDocumento: 'ruc', documento: '80012345', telefono: '021 600 700', whatsapp: '595991600700', email: 'admin@estudiobenitez.com.py', direccion: 'Gral. Diaz 555, piso 3', barrio: 'Centro', ciudad: 'Asuncion', zona: zonas.get('Asuncion Centro') },
       { nombre: 'Ana Villalba', tipoDocumento: 'ruc', documento: '2345678', telefono: '0983 222 333', whatsapp: '595983222333', direccion: 'Ruta Luque - San Bernardino km 2', barrio: 'Laurelty', ciudad: 'Luque', zona: zonas.get('Luque') },
       { nombre: 'Pedro Acosta', telefono: '0961 777 888', direccion: 'Mcal. Estigarribia 1500', barrio: 'Barcequillo', ciudad: 'San Lorenzo', zona: zonas.get('San Lorenzo') },
     ];
     for (const c of clientes) await Client.create(c);
     console.log('Clientes de ejemplo creados');
+  }
+
+  if (!(await Empresa.findOne())) {
+    const anio = new Date().getFullYear();
+    await Empresa.create({
+      razonSocial: 'Aguateria Ejemplo S.A.',
+      nombreFantasia: 'Agua Pura',
+      ruc: '80099999',
+      direccion: 'Av. Eusebio Ayala 1234',
+      ciudad: 'Asuncion',
+      telefono: '021 555 000',
+      actividadEconomica: 'Elaboracion de aguas minerales y otras aguas embotelladas',
+      timbrado: { numero: '12345678', fechaInicio: new Date(anio, 0, 1), fechaFin: new Date(anio + 1, 11, 31) },
+    });
+    console.log('Datos de empresa de ejemplo creados (timbrado ficticio)');
+  }
+
+  if (!(await User.findOne({ email: 'cajero@guateria.com' }))) {
+    await User.create({ nombre: 'Laura Caceres', email: 'cajero@guateria.com', password: 'cajero123', rol: 'cajero' });
+    console.log('Usuario cajero creado -> email: cajero@guateria.com / password: cajero123');
   }
 
   console.log('Seed completado');

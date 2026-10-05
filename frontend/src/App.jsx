@@ -12,6 +12,11 @@ import Ruta from './pages/Ruta';
 import Envases from './pages/Envases';
 import Zonas from './pages/Zonas';
 import Usuarios from './pages/Usuarios';
+import Cobros from './pages/Cobros';
+import Cuentas from './pages/Cuentas';
+import Caja from './pages/Caja';
+import Facturas from './pages/Facturas';
+import Empresa from './pages/Empresa';
 
 const PAGINAS = [
   ['/ruta', Ruta],
@@ -21,6 +26,11 @@ const PAGINAS = [
   ['/productos', Productos],
   ['/zonas', Zonas],
   ['/usuarios', Usuarios],
+  ['/cobros', Cobros],
+  ['/cuentas', Cuentas],
+  ['/caja', Caja],
+  ['/facturas', Facturas],
+  ['/empresa', Empresa],
 ];
 
 function App() {

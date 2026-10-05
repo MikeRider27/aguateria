@@ -3,7 +3,8 @@ import api from '../api/axios';
 import Modal from '../components/Modal';
 import EntregaModal from '../components/EntregaModal';
 import { useAuth } from '../context/AuthContext';
-import { fecha, gs, hoyISO, mensajeError, METODOS_PAGO } from '../utils/format';
+import { ESTADO_PAGO, estadoPago, fecha, gs, hoyISO, mensajeError, METODOS_PAGO } from '../utils/format';
+import { useNavigate } from 'react-router-dom';
 
 const ESTADOS = ['pendiente', 'en_camino', 'entregado', 'cancelado'];
 
@@ -16,6 +17,7 @@ const formVacio = () => ({
   notas: '',
   repartidor: '',
   fechaProgramada: hoyISO(),
+  condicion: '',
 });
 
 const Pedidos = () => {
@@ -29,7 +31,8 @@ const Pedidos = () => {
   const [error, setError] = useState('');
   const [form, setForm] = useState(formVacio());
   const [items, setItems] = useState([nuevoItem()]);
-  const { esAdmin } = useAuth();
+  const { esAdmin, tieneRol } = useAuth();
+  const navigate = useNavigate();
 
   const cargarPedidos = async (f = filtros) => {
     const params = Object.fromEntries(Object.entries(f).filter(([, v]) => v));
@@ -97,6 +100,7 @@ const Pedidos = () => {
       await api.post('/orders', {
         ...form,
         repartidor: form.repartidor || null,
+        condicion: form.condicion || undefined,
         items: items
           .filter((i) => i.producto)
           .map((i) => ({ producto: i.producto, cantidad: Number(i.cantidad), garantias: Number(i.garantias || 0) })),
@@ -107,6 +111,19 @@ const Pedidos = () => {
       setError(mensajeError(err, 'Error al crear pedido'));
     }
   };
+
+  const facturar = async (pedido) => {
+    if (!window.confirm(`¿Emitir factura por ${gs(pedido.total - pedido.totalGarantias)} a ${pedido.cliente?.nombre}?`)) return;
+    try {
+      const { data } = await api.post('/facturas', { pedidos: [pedido._id] });
+      window.alert(`Factura ${data.numero} emitida`);
+      navigate('/facturas');
+    } catch (err) {
+      window.alert(mensajeError(err, 'No se pudo emitir la factura'));
+    }
+  };
+
+  const clienteSel = clientes.find((c) => c._id === form.cliente);
 
   const cambiarEstado = async (id, estado) => {
     try {
@@ -205,7 +222,11 @@ const Pedidos = () => {
                 <td>
                   {gs(p.total)}
                   {p.totalGarantias > 0 && <small className="muted block">incl. garantia {gs(p.totalGarantias)}</small>}
-                  <small className="muted block">{METODOS_PAGO[p.metodoPago]}</small>
+                  <small className="muted block">
+                    {p.condicion === 'credito' ? 'Credito' : METODOS_PAGO[p.metodoPago]} ·{' '}
+                    <span className={`pago-${estadoPago(p)}`}>{ESTADO_PAGO[estadoPago(p)]}</span>
+                  </small>
+                  {p.factura && <small className="muted block">Facturado</small>}
                 </td>
                 <td>
                   <span className={`badge badge-${p.estado}`}>{p.estado.replace('_', ' ')}</span>
@@ -242,7 +263,12 @@ const Pedidos = () => {
                       </button>
                     </>
                   )}
-                  {esAdmin && p.estado !== 'entregado' && (
+                  {p.estado === 'entregado' && !p.factura && tieneRol('admin', 'cajero') && (
+                    <button className="btn-secondary" onClick={() => facturar(p)}>
+                      Facturar
+                    </button>
+                  )}
+                  {esAdmin && p.estado !== 'entregado' && p.montoPagado === 0 && (
                     <button className="btn-danger" onClick={() => eliminarPedido(p._id)}>
                       Eliminar
                     </button>
@@ -366,6 +392,16 @@ const Pedidos = () => {
             <button type="button" className="btn-secondary" onClick={() => setItems([...items, nuevoItem()])}>
               + Agregar producto
             </button>
+
+            {clienteSel?.condicionVenta === 'credito' && (
+              <>
+                <label>Condicion</label>
+                <select value={form.condicion} onChange={(e) => setForm({ ...form, condicion: e.target.value })}>
+                  <option value="">Credito (cuenta corriente)</option>
+                  <option value="contado">Contado</option>
+                </select>
+              </>
+            )}
 
             <label>Metodo de pago</label>
             <select value={form.metodoPago} onChange={(e) => setForm({ ...form, metodoPago: e.target.value })}>

@@ -14,6 +14,11 @@ const zoneRoutes = require('./routes/zoneRoutes');
 const userRoutes = require('./routes/userRoutes');
 const envaseRoutes = require('./routes/envaseRoutes');
 const rutaRoutes = require('./routes/rutaRoutes');
+const cobroRoutes = require('./routes/cobroRoutes');
+const cuentaRoutes = require('./routes/cuentaRoutes');
+const cajaRoutes = require('./routes/cajaRoutes');
+const facturaRoutes = require('./routes/facturaRoutes');
+const empresaRoutes = require('./routes/empresaRoutes');
 
 const app = express();
 
@@ -32,6 +37,11 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/envases', envaseRoutes);
 app.use('/api/ruta', rutaRoutes);
+app.use('/api/cobros', cobroRoutes);
+app.use('/api/cuentas', cuentaRoutes);
+app.use('/api/caja', cajaRoutes);
+app.use('/api/facturas', facturaRoutes);
+app.use('/api/empresa', empresaRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

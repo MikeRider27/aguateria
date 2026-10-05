@@ -5,6 +5,8 @@ const AuthContext = createContext(null);
 
 export const ROLES = {
   admin: 'Administrador',
+  cajero: 'Cajero / Administrativo',
+  vendedor: 'Vendedor',
   repartidor: 'Repartidor',
 };
 

@@ -19,6 +19,9 @@ const vacio = {
   zona: '',
   lat: '',
   lng: '',
+  condicionVenta: 'contado',
+  limiteCredito: 0,
+  plazoDias: 30,
   activo: true,
 };
 
@@ -38,7 +41,8 @@ const Clientes = () => {
   const [form, setForm] = useState(vacio);
   const [error, setError] = useState('');
   const [detalleEnvases, setDetalleEnvases] = useState(null);
-  const { esAdmin } = useAuth();
+  const { esAdmin, tieneRol } = useAuth();
+  const gestionaCredito = tieneRol('admin', 'cajero');
 
   const cargar = async (q = busqueda, zona = filtroZona) => {
     const params = {};
@@ -100,6 +104,8 @@ const Clientes = () => {
     const { lat, lng, ...resto } = form;
     const payload = {
       ...resto,
+      limiteCredito: Number(form.limiteCredito || 0),
+      plazoDias: Number(form.plazoDias || 0),
       documento: form.tipoDocumento === 'sin_documento' ? '' : form.documento.trim(),
       ubicacion: lat !== '' && lng !== '' ? { lat: Number(lat), lng: Number(lng) } : undefined,
     };
@@ -179,6 +185,7 @@ const Clientes = () => {
                 <td>
                   {c.nombre}
                   {c.tipo === 'empresa' && <span className="tag">Empresa</span>}
+                  {c.condicionVenta === 'credito' && <span className="tag tag-azul">Credito</span>}
                   {!c.activo && <span className="tag">Inactivo</span>}
                 </td>
                 <td>{documentoTexto(c)}</td>
@@ -306,6 +313,29 @@ const Clientes = () => {
                 <input value={form.lng} onChange={set('lng')} inputMode="decimal" placeholder="-57.6470" />
               </div>
             </div>
+            {gestionaCredito && (
+              <div className="form-grid">
+                <div>
+                  <label>Condicion de venta</label>
+                  <select value={form.condicionVenta} onChange={set('condicionVenta')}>
+                    <option value="contado">Contado</option>
+                    <option value="credito">Credito (cuenta corriente)</option>
+                  </select>
+                </div>
+                {form.condicionVenta === 'credito' && (
+                  <>
+                    <div>
+                      <label>Limite de credito (Gs., 0 = sin limite)</label>
+                      <input type="number" min="0" step="1" value={form.limiteCredito} onChange={set('limiteCredito')} />
+                    </div>
+                    <div>
+                      <label>Plazo de pago (dias)</label>
+                      <input type="number" min="0" value={form.plazoDias} onChange={set('plazoDias')} />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <button type="button" className="btn-secondary" onClick={usarUbicacionActual}>
               Usar mi ubicacion actual
             </button>

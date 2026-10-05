@@ -42,7 +42,9 @@ const Ruta = () => {
     (acc, p) => acc + p.items.filter((i) => i.retornable).reduce((a, i) => a + i.cantidad, 0),
     0
   );
-  const aCobrar = pendientes.reduce((acc, p) => acc + p.total, 0);
+  const aCobrar = pendientes
+    .filter((p) => p.condicion !== 'credito')
+    .reduce((acc, p) => acc + p.total - (p.montoPagado || 0), 0);
 
   return (
     <div className="ruta">
@@ -127,7 +129,10 @@ const Ruta = () => {
                 ))}
               </ul>
               {p.notas && <div className="nota">{p.notas}</div>}
-              <div className="tarjeta-total">{gs(p.total)}</div>
+              <div className="tarjeta-total">
+                {gs(p.total)}
+                {p.condicion === 'credito' && <span className="tag tag-azul">Credito</span>}
+              </div>
               <div className="tarjeta-acciones">
                 <a className="btn btn-secondary" href={`tel:${p.cliente?.telefono}`}>
                   Llamar

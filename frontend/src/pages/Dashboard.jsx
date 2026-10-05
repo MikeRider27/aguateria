@@ -39,6 +39,15 @@ const Dashboard = () => {
           <span className="stat-value">{stats.totalClientes}</span>
         </div>
         <div className="stat-card">
+          <span className="stat-label">Cobrado hoy</span>
+          <span className="stat-value small">{gs(stats.cobrosHoy)}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Cuentas por cobrar</span>
+          <span className="stat-value small">{gs(stats.porCobrar)}</span>
+          <span className="stat-sub">{stats.clientesConDeuda} clientes</span>
+        </div>
+        <div className="stat-card">
           <span className="stat-label">Envases en clientes</span>
           <span className="stat-value">{stats.envasesEnClientes}</span>
           <span className="stat-sub">{stats.envasesVacios} vacios en planta</span>

@@ -22,14 +22,22 @@ guateria/
 
 Pensado para una distribuidora de agua en bidones de Paraguay (montos en guaranies, RUC con digito verificador, zonas de Gran Asuncion).
 
-- **Auth y usuarios:** login con JWT. Roles `admin` (acceso total) y `repartidor` (hoja de ruta, pedidos, clientes y envases; sin acceso a Productos, Zonas ni Usuarios). Pantalla de Usuarios para dar de alta repartidores.
+- **Auth y usuarios:** login con JWT y pantalla de Usuarios. Roles:
+  - `admin`: acceso total.
+  - `cajero`: cobros, cuentas corrientes, cierres de caja, facturacion y condiciones de credito de los clientes.
+  - `vendedor`: pedidos, clientes, envases y consulta de cuentas corrientes.
+  - `repartidor`: hoja de ruta, entregas, sus propios cobros y su caja pendiente de rendir.
 - **Productos:** catalogo con precio en Gs., stock y stock minimo. Los productos **retornables** (bidones 20L/10L) tienen precio de garantia por envase y stock de vacios y dañados.
 - **Envases retornables:** libro de movimientos por cliente (entrega / retiro / ajuste) con el saldo de bidones que tiene cada cliente. Inventario por producto: llenos, vacios en planta, en clientes y dañados. Operaciones de planta: llenado, baja por daño, ingreso de envases nuevos y descarte. Filtro de clientes con envases sin movimiento hace +30/60/90 dias.
 - **Clientes:** particular o empresa, CI o RUC (el DV se calcula con el algoritmo modulo 11 de la DNIT), telefono y WhatsApp, direccion, barrio, ciudad, zona de reparto y coordenadas GPS.
 - **Zonas de reparto:** ciudad, dias de visita y repartidor asignado. Al crear un pedido se asigna automaticamente el repartidor de la zona del cliente.
 - **Pedidos:** fecha de entrega programada, garantias por envases nuevos, descuento automatico de inventario. Estados `pendiente` → `en_camino` → `entregado` / `cancelado`. La entrega se confirma registrando los vacios retirados, lo que actualiza el saldo del cliente y el stock de vacios. Un pedido entregado no puede cancelarse ni eliminarse.
 - **Hoja de ruta:** vista para el celular del repartidor con los pedidos del dia (y los atrasados), bidones a cargar, monto a cobrar, botones de llamada, WhatsApp y mapa, y clientes de las zonas que se visitan ese dia que todavia no hicieron pedido.
-- **Dashboard:** ventas del dia, pedidos para hoy, pendientes/en camino, clientes activos, envases en clientes y alertas de stock bajo.
+- **Cuentas corrientes:** clientes de contado o a credito con limite y plazo de pago. Al crear un pedido a credito se controla el limite disponible. Estado de cuenta (debe / haber / saldo) y deuda vencida segun el plazo, con recordatorio por WhatsApp.
+- **Cobros:** recibos numerados en efectivo, transferencia, tarjeta, QR o cheque, aplicados a pedidos puntuales o a la deuda mas antigua. El repartidor puede cobrar al confirmar la entrega. Los cobros se anulan solo si aun no fueron rendidos.
+- **Caja:** cobros pendientes de rendir agrupados por usuario; el cajero recibe la rendicion, declara el efectivo contado y queda registrado el faltante o sobrante.
+- **Facturacion electronica (SIFEN):** datos de la empresa, timbrado y numeracion `001-001-0000001`. Factura por pedidos entregados con IVA incluido (10% = total/11, 5% = total/21), representacion grafica imprimible (KuDE) con CDC, reenvio y anulacion. Las garantias de envases no se facturan. Ver [Facturacion electronica](#facturacion-electronica-sifen).
+- **Dashboard:** ventas y cobros del dia, cuentas por cobrar, pedidos para hoy, pendientes/en camino, clientes activos, envases en clientes y alertas de stock bajo.
 
 ## Levantar todo con Docker
 
@@ -57,9 +65,10 @@ Pensado para una distribuidora de agua en bidones de Paraguay (montos en guarani
 4. Abre la aplicacion en [http://localhost:8080](http://localhost:8080) e inicia sesion con:
 
    - **Admin:** `admin@guateria.com` / `admin123` (o los valores de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`)
+   - **Cajero:** `cajero@guateria.com` / `cajero123`
    - **Repartidor:** `repartidor@guateria.com` / `repartidor123`
 
-   El seed tambien crea zonas de Gran Asuncion, productos (bidones 20L y 10L retornables, packs) y clientes de ejemplo.
+   El seed tambien crea zonas de Gran Asuncion, productos (bidones 20L y 10L retornables, packs), clientes de ejemplo (uno de ellos a credito) y datos de empresa con un timbrado ficticio.
 
 La API queda expuesta tambien en `http://localhost:5000/api` y MongoDB en el puerto `27017` por si necesitas conectarte con una herramienta externa.
 
@@ -88,6 +97,18 @@ El frontend en modo dev usa el proxy de Vite (`/api` → `http://localhost:5000`
 ## Gestion de usuarios
 
 Solo un usuario `admin` puede crear o editar usuarios, desde la pantalla **Usuarios** (`/api/users`). Los usuarios no se eliminan: se desactivan.
+
+## Facturacion electronica (SIFEN)
+
+La integracion se controla con variables de entorno del backend:
+
+| Variable | Valor | Efecto |
+|---|---|---|
+| `SIFEN_MODO` | `simulado` (por defecto) | Numera la factura y genera un CDC de prueba con la estructura oficial de 44 digitos. **No se envia a la DNIT ni tiene validez fiscal**; el KuDE lo indica. |
+| `SIFEN_MODO` | `proveedor` | Envia el documento a un proveedor de facturacion electronica (`POST {SIFEN_API_URL}/documentos`, eventos de cancelacion en `/eventos/cancelacion`). |
+| `SIFEN_API_URL`, `SIFEN_API_KEY` | URL y token del proveedor | Requeridos en modo `proveedor`. |
+
+El formato del payload depende del proveedor que se contrate: adaptar `construirPayload` en `backend/src/services/sifen.js`. Si el envio falla, la factura queda `pendiente` y se puede reenviar desde la pantalla Facturas.
 
 ## Zona horaria
 

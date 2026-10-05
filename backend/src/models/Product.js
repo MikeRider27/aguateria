@@ -14,6 +14,8 @@ const productSchema = new mongoose.Schema(
     precioGarantia: { type: Number, min: 0, default: 0, validate: enteroGs },
     stockVacios: { type: Number, min: 0, default: 0 },
     stockDanados: { type: Number, min: 0, default: 0 },
+    // Tasa de IVA incluida en el precio (Paraguay: 10%, 5% o exenta)
+    iva: { type: Number, enum: [10, 5, 0], default: 10 },
     activo: { type: Boolean, default: true },
   },
   { timestamps: true }

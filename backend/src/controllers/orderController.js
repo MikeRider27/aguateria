@@ -4,6 +4,8 @@ const Client = require('../models/Client');
 const Zone = require('../models/Zone');
 const EnvaseMovimiento = require('../models/EnvaseMovimiento');
 const { saldosPorCliente } = require('../services/envases');
+const { deudaCliente, pendienteCredito } = require('../services/cuentas');
+const { registrarCobro } = require('../services/cobros');
 const { rangoDia } = require('../utils/fechas');
 
 const poblar = (query) =>
@@ -56,6 +58,7 @@ const getOrder = async (req, res, next) => {
 const createOrder = async (req, res, next) => {
   try {
     const { cliente, items, metodoPago, direccionEntrega, notas, repartidor, fechaProgramada } = req.body;
+    const condicion = req.body.condicion || null;
 
     if (!cliente || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ mensaje: 'Cliente y al menos un item son requeridos' });
@@ -109,9 +112,27 @@ const createOrder = async (req, res, next) => {
         precioUnitario: producto.precio,
         subtotal,
         retornable: producto.retornable,
+        iva: producto.iva,
         garantias,
         montoGarantia,
       });
+    }
+
+    // Condicion de venta: por defecto la del cliente; el credito solo para clientes habilitados
+    const condicionFinal = condicion || clienteDoc.condicionVenta;
+    if (condicionFinal === 'credito') {
+      if (clienteDoc.condicionVenta !== 'credito') {
+        return res.status(400).json({ mensaje: 'El cliente no esta habilitado para compras a credito' });
+      }
+      if (clienteDoc.limiteCredito > 0) {
+        const comprometido = (await deudaCliente(clienteDoc._id)) + (await pendienteCredito(clienteDoc._id));
+        const disponible = clienteDoc.limiteCredito - comprometido;
+        if (subtotalProductos + totalGarantias > disponible) {
+          return res.status(400).json({
+            mensaje: `Supera el limite de credito del cliente (disponible: Gs. ${Math.max(disponible, 0).toLocaleString('es-PY')})`,
+          });
+        }
+      }
     }
 
     // Descontar inventario de forma atomica por producto
@@ -146,6 +167,7 @@ const createOrder = async (req, res, next) => {
         totalGarantias,
         total: subtotalProductos + totalGarantias,
         metodoPago,
+        condicion: condicionFinal,
         direccionEntrega: direccionEntrega || clienteDoc.direccion,
         notas,
         repartidor: repartidorFinal,
@@ -177,14 +199,19 @@ const updateOrderStatus = async (req, res, next) => {
     if (estado === 'entregado') {
       return res.status(400).json({ mensaje: 'Use la opcion "Entregar" para registrar la entrega y los envases' });
     }
+    if (estado === 'cancelado' && order.montoPagado > 0) {
+      return res.status(400).json({ mensaje: 'El pedido tiene cobros registrados, anulelos antes de cancelar' });
+    }
 
     const cambios = {};
+    const filtroTransicion = { _id: order._id, estado: { $in: ['pendiente', 'en_camino'] } };
+    if (estado === 'cancelado') filtroTransicion.montoPagado = 0;
     if (estado) cambios.estado = estado;
     if (repartidor !== undefined) cambios.repartidor = repartidor || null;
 
     // Transicion atomica: evita restaurar stock dos veces si se cancela en paralelo
     const actualizado = await Order.findOneAndUpdate(
-      { _id: order._id, estado: { $in: ['pendiente', 'en_camino'] } },
+      filtroTransicion,
       { $set: cambios },
       { new: true, runValidators: true }
     );
@@ -210,6 +237,11 @@ const deliverOrder = async (req, res, next) => {
     const retiros = (req.body.retiros || [])
       .map((r) => ({ producto: String(r.producto), cantidad: Number(r.cantidad) }))
       .filter((r) => r.producto && r.cantidad > 0);
+
+    const montoCobrado = Number(req.body.montoCobrado || 0);
+    if (!Number.isInteger(montoCobrado) || montoCobrado < 0 || montoCobrado > order.total - order.montoPagado) {
+      return res.status(400).json({ mensaje: 'El monto cobrado no puede superar el saldo del pedido' });
+    }
 
     if (retiros.some((r) => !Number.isInteger(r.cantidad))) {
       return res.status(400).json({ mensaje: 'Las cantidades retiradas deben ser numeros enteros' });
@@ -274,6 +306,18 @@ const deliverOrder = async (req, res, next) => {
       await Product.findByIdAndUpdate(r.producto, { $inc: { stockVacios: r.cantidad } });
     }
 
+    // El dinero recibido en la entrega queda como cobro del repartidor (para su rendicion de caja)
+    if (montoCobrado > 0) {
+      await registrarCobro({
+        cliente: order.cliente,
+        monto: montoCobrado,
+        metodo: entregado.metodoPago,
+        referencia: req.body.referenciaPago,
+        pedidos: [order._id],
+        usuario: req.user._id,
+      });
+    }
+
     res.json(await poblar(Order.findById(order._id)));
   } catch (error) {
     next(error);
@@ -282,13 +326,17 @@ const deliverOrder = async (req, res, next) => {
 
 const deleteOrder = async (req, res, next) => {
   try {
-    const order = await Order.findOneAndDelete({ _id: req.params.id, estado: { $ne: 'entregado' } });
+    const order = await Order.findOneAndDelete({
+      _id: req.params.id,
+      estado: { $ne: 'entregado' },
+      montoPagado: 0,
+    });
     if (!order) {
       const existe = await Order.exists({ _id: req.params.id });
       if (existe) {
         return res
           .status(400)
-          .json({ mensaje: 'Un pedido entregado no puede eliminarse porque ya movio envases' });
+          .json({ mensaje: 'Un pedido entregado o con cobros registrados no puede eliminarse' });
       }
       return res.status(404).json({ mensaje: 'Pedido no encontrado' });
     }

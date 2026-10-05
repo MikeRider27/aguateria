@@ -21,9 +21,13 @@ const CAMPOS = [
   'activo',
 ];
 
-const tomarCampos = (body) => {
+// Condiciones de credito: solo las define administracion
+const CAMPOS_CREDITO = ['condicionVenta', 'limiteCredito', 'plazoDias'];
+
+const tomarCampos = (body, user) => {
   const datos = {};
-  CAMPOS.forEach((c) => body[c] !== undefined && (datos[c] = body[c]));
+  const permitidos = ['admin', 'cajero'].includes(user.rol) ? [...CAMPOS, ...CAMPOS_CREDITO] : CAMPOS;
+  permitidos.forEach((c) => body[c] !== undefined && (datos[c] = body[c]));
   if (datos.zona === '') datos.zona = null;
   return datos;
 };
@@ -75,7 +79,7 @@ const getClient = async (req, res, next) => {
 
 const createClient = async (req, res, next) => {
   try {
-    const client = await Client.create(tomarCampos(req.body));
+    const client = await Client.create(tomarCampos(req.body, req.user));
     res.status(201).json(client);
   } catch (error) {
     next(error);
@@ -87,7 +91,7 @@ const updateClient = async (req, res, next) => {
   try {
     const client = await Client.findById(req.params.id);
     if (!client) return res.status(404).json({ mensaje: 'Cliente no encontrado' });
-    client.set(tomarCampos(req.body));
+    client.set(tomarCampos(req.body, req.user));
     await client.save();
     res.json(client);
   } catch (error) {

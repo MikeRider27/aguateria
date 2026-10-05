@@ -29,6 +29,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@guateria.com}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin123}
+      SIFEN_MODO: ${SIFEN_MODO:-simulado}
+      SIFEN_API_URL: ${SIFEN_API_URL:-}
+      SIFEN_API_KEY: ${SIFEN_API_KEY:-}
     ports:
       - "5000:5000"
 

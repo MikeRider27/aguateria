@@ -41,6 +41,13 @@ export const METODOS_PAGO = {
   qr: 'QR',
 };
 
+export const METODOS_COBRO = { ...METODOS_PAGO, cheque: 'Cheque' };
+
+export const ESTADO_PAGO = { pendiente: 'Pendiente', parcial: 'Parcial', pagado: 'Pagado' };
+
+export const estadoPago = (pedido) =>
+  pedido.montoPagado >= pedido.total ? 'pagado' : pedido.montoPagado > 0 ? 'parcial' : 'pendiente';
+
 // Digito verificador del RUC (modulo 11), igual que en el backend
 export const calcularDV = (numeroRuc) => {
   const normalizado = String(numeroRuc)

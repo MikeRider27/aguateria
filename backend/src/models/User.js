@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
     telefono: { type: String, trim: true },
-    rol: { type: String, enum: ['admin', 'repartidor'], default: 'repartidor' },
+    rol: { type: String, enum: ['admin', 'cajero', 'vendedor', 'repartidor'], default: 'repartidor' },
     activo: { type: Boolean, default: true },
   },
   { timestamps: true }

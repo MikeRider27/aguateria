@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { calcularDV } = require('../utils/ruc');
+const { enteroGs } = require('../utils/validadores');
 
 const clientSchema = new mongoose.Schema(
   {
@@ -21,6 +22,9 @@ const clientSchema = new mongoose.Schema(
       lat: { type: Number, min: -90, max: 90 },
       lng: { type: Number, min: -180, max: 180 },
     },
+    condicionVenta: { type: String, enum: ['contado', 'credito'], default: 'contado' },
+    limiteCredito: { type: Number, min: 0, default: 0, validate: enteroGs },
+    plazoDias: { type: Number, min: 0, default: 30 },
     activo: { type: Boolean, default: true },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }

@@ -12,6 +12,7 @@ const vacio = {
   retornable: false,
   precioGarantia: '',
   stockVacios: '',
+  iva: 10,
   activo: true,
 };
 
@@ -54,6 +55,7 @@ const Productos = () => {
     const payload = {
       ...form,
       precio: Number(form.precio),
+      iva: Number(form.iva),
       stock: Number(form.stock),
       stockMinimo: Number(form.stockMinimo),
       precioGarantia: form.retornable ? Number(form.precioGarantia || 0) : 0,
@@ -111,7 +113,10 @@ const Productos = () => {
                   {p.nombre} <span className="muted">{p.presentacion}</span>
                   {!p.activo && <span className="tag">Inactivo</span>}
                 </td>
-                <td>{gs(p.precio)}</td>
+                <td>
+                  {gs(p.precio)}
+                  <small className="muted block">{p.iva ? `IVA ${p.iva}%` : 'Exenta'}</small>
+                </td>
                 <td>{p.stock}</td>
                 <td>{p.stockMinimo}</td>
                 <td>
@@ -147,7 +152,18 @@ const Productos = () => {
             <label>Presentacion</label>
             <input value={form.presentacion} onChange={set('presentacion')} placeholder="Bidon 20L" required />
             <label>Precio (Gs.)</label>
-            <input type="number" step="1" min="0" value={form.precio} onChange={set('precio')} required />
+            <div className="form-grid">
+              <div>
+                <input type="number" step="1" min="0" value={form.precio} onChange={set('precio')} required />
+              </div>
+              <div>
+                <select value={form.iva} onChange={set('iva')}>
+                  <option value={10}>IVA 10% incluido</option>
+                  <option value={5}>IVA 5% incluido</option>
+                  <option value={0}>Exenta</option>
+                </select>
+              </div>
+            </div>
             <div className="form-grid">
               <div>
                 <label>{form.retornable ? 'Stock (envases llenos)' : 'Stock'}</label>

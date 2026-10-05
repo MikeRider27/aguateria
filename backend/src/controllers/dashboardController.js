@@ -3,6 +3,8 @@ const Product = require('../models/Product');
 const Client = require('../models/Client');
 const { rangoDia } = require('../utils/fechas');
 const { totalesEnClientes } = require('../services/envases');
+const { deudasPorCliente } = require('../services/cuentas');
+const Cobro = require('../models/Cobro');
 
 const getStats = async (req, res, next) => {
   try {
@@ -22,6 +24,14 @@ const getStats = async (req, res, next) => {
         totalesEnClientes(),
       ]);
 
+    const [deudas, cobrosHoyAgg] = await Promise.all([
+      deudasPorCliente(),
+      Cobro.aggregate([
+        { $match: { createdAt: { $gte: inicio, $lt: fin }, anulado: false } },
+        { $group: { _id: null, total: { $sum: '$monto' } } },
+      ]),
+    ]);
+
     const productosStockBajo = productos.filter((p) => p.stock <= p.stockMinimo);
     const retornables = productos.filter((p) => p.retornable);
 
@@ -32,6 +42,9 @@ const getStats = async (req, res, next) => {
       pedidosPendientes,
       pedidosEnCamino,
       totalClientes,
+      porCobrar: deudas.reduce((a, d) => a + d.saldo, 0),
+      clientesConDeuda: deudas.length,
+      cobrosHoy: cobrosHoyAgg[0]?.total || 0,
       envasesEnClientes: [...enClientes.values()].reduce((a, b) => a + b, 0),
       envasesVacios: retornables.reduce((a, p) => a + p.stockVacios, 0),
       productosStockBajo: productosStockBajo.map((p) => ({

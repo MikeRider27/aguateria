@@ -8,6 +8,10 @@ const EntregaModal = ({ pedido, onClose, onEntregado }) => {
   const [saldos, setSaldos] = useState([]);
   const [retiros, setRetiros] = useState({});
   const [metodoPago, setMetodoPago] = useState(pedido.metodoPago);
+  const saldoPedido = pedido.total - (pedido.montoPagado || 0);
+  // Contado: se cobra todo al entregar. Credito: queda en cuenta corriente salvo que pague algo.
+  const [montoCobrado, setMontoCobrado] = useState(pedido.condicion === 'credito' ? 0 : saldoPedido);
+  const [referenciaPago, setReferenciaPago] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -45,6 +49,8 @@ const EntregaModal = ({ pedido, onClose, onEntregado }) => {
     try {
       await api.patch(`/orders/${pedido._id}/entregar`, {
         metodoPago,
+        montoCobrado: Number(montoCobrado || 0),
+        referenciaPago,
         retiros: Object.entries(retiros)
           .filter(([, cantidad]) => Number(cantidad) > 0)
           .map(([producto, cantidad]) => ({ producto, cantidad: Number(cantidad) })),
@@ -67,7 +73,11 @@ const EntregaModal = ({ pedido, onClose, onEntregado }) => {
             </li>
           ))}
         </ul>
-        <div className="total-estimado">Total a cobrar: {gs(pedido.total)}</div>
+        <div className="total-estimado">
+          Total del pedido: {gs(pedido.total)}
+          {pedido.condicion === 'credito' && <span className="tag tag-azul">Credito</span>}
+          {pedido.montoPagado > 0 && <small className="muted block">Ya pagado: {gs(pedido.montoPagado)}</small>}
+        </div>
 
         {productos.size > 0 && (
           <>
@@ -100,6 +110,29 @@ const EntregaModal = ({ pedido, onClose, onEntregado }) => {
             </option>
           ))}
         </select>
+
+        <label>Monto cobrado (Gs.)</label>
+        <input
+          type="number"
+          min="0"
+          max={saldoPedido}
+          step="1"
+          value={montoCobrado}
+          onChange={(e) => setMontoCobrado(e.target.value)}
+        />
+        {metodoPago !== 'efectivo' && Number(montoCobrado) > 0 && (
+          <>
+            <label>Referencia del pago</label>
+            <input
+              value={referenciaPago}
+              onChange={(e) => setReferenciaPago(e.target.value)}
+              placeholder="Nro. de transferencia o comprobante"
+            />
+          </>
+        )}
+        {Number(montoCobrado) < saldoPedido && (
+          <p className="muted">Quedan {gs(saldoPedido - Number(montoCobrado || 0))} en la cuenta corriente del cliente.</p>
+        )}
 
         <button type="submit" disabled={enviando}>
           {enviando ? 'Registrando...' : 'Confirmar entrega'}

@@ -772,3 +772,157 @@ a.btn-wa {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Fase 2: cobros y facturacion ---- */
+.tag-azul {
+  background: #e0f2fe;
+  color: var(--azul-oscuro);
+}
+
+.tag-verde {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.tag-rojo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pago-pagado {
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.pago-parcial {
+  color: var(--amarillo);
+  font-weight: 600;
+}
+
+.pago-pendiente {
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+.num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.resumen-linea {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--gris-200);
+  font-size: 0.9rem;
+}
+
+.alert-info {
+  background: #e0f2fe;
+  color: var(--azul-oscuro);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.grupo-caja {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Representacion grafica de la factura (KuDE) */
+.kude {
+  background: white;
+  color: #000;
+  font-size: 0.82rem;
+  padding: 1rem;
+  border: 1px solid #000;
+}
+
+.kude-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.kude-header h3 {
+  margin: 0 0 0.3rem;
+}
+
+.kude table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.kude th,
+.kude td {
+  border: 1px solid #000;
+  padding: 0.25rem 0.4rem;
+}
+
+.kude .cdc {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.kude-marca {
+  color: var(--rojo);
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--rojo);
+  padding: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .kude,
+  .kude * {
+    visibility: visible;
+  }
+
+  .kude {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+  }
+}
+
+.total-filtro {
+  margin-left: auto;
+  align-self: center;
+}
+
+.check-tabla {
+  width: auto;
+  margin: 0;
+}
+
+.btn-imprimir {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.pagina-angosta {
+  max-width: 760px;
+}
+
+.card {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
